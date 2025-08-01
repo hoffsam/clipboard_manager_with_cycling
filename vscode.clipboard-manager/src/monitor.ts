@@ -19,6 +19,8 @@ export class Monitor implements vscode.Disposable {
   public onlyWindowFocused: boolean = true;
 
   private _onDidChangeText = new vscode.EventEmitter<IClipboardTextChange>();
+  private intervalId?: NodeJS.Timer;
+  private enabled = false;
   public readonly onDidChangeText = this._onDidChangeText.event;
 
   protected _timer: NodeJS.Timer | undefined;
@@ -93,6 +95,26 @@ export class Monitor implements vscode.Disposable {
     this._windowFocused = state.focused;
   }
 
+  public start() {
+    if (this.enabled) return;
+    this.enabled = true;
+
+    this.intervalId = setInterval(() => {
+      if (!this.enabled) return;
+      if (this.onlyWindowFocused && !vscode.window.state.focused) return;
+
+      this.checkChangeText();   
+    }, this.checkInterval);
+  }
+
+  public stop() {
+    this.enabled = false;
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = undefined;
+    }
+  }
+
   public async checkChangeText() {
     // Don't check the clipboard when windows is not focused
     if (this.onlyWindowFocused && !this._windowFocused) {
@@ -130,6 +152,7 @@ export class Monitor implements vscode.Disposable {
   }
 
   public dispose() {
+    this.stop();
     this._disposables.forEach(d => d.dispose());
   }
 }

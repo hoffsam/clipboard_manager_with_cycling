@@ -24,30 +24,20 @@ export async function activate(context: vscode.ExtensionContext) {
   const disposable: vscode.Disposable[] = [];
 
   // Check the clipboard is working
+  let monitor: Monitor;
+
   try {
-    await defaultClipboard.readText(); // Read test
+    await defaultClipboard.readText(); // Clipboard access test
+    disposable.push(defaultClipboard);
+
+    monitor = new Monitor(defaultClipboard);
+    disposable.push(monitor);
   } catch (error: any) {
-    console.log(error);
-    // Small delay to force show error
-    setTimeout(() => {
-      if (error.message) {
-        vscode.window.showErrorMessage(error.message);
-      } else {
-        vscode.window.showErrorMessage(
-          "Failed to read value from clipboard, check the console log"
-        );
-      }
-    }, 2000);
-    // Disable clipboard listening
-    defaultClipboard.dispose();
-    return;
+    console.warn("Clipboard read failed:", error);
+    vscode.window.showWarningMessage("Clipboard access failed: clipboard monitoring disabled.");
+    monitor = new Monitor(null as any); // placeholder that won't do anything
   }
 
-  // Add to disposable list the default clipboard
-  disposable.push(defaultClipboard);
-
-  const monitor = new Monitor(defaultClipboard);
-  disposable.push(monitor);
 
   manager = new ClipboardManager(context, monitor);
   disposable.push(manager);
