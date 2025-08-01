@@ -3,7 +3,7 @@
     "name": "clipboard-manager-with-cycling",
     "displayName": "Clipboard Manager (with Cycling)",
     "description": "Clipboard Manager extension with the ability to cycle through the clipboard history.",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "icon": "media/clipboard.png",
     "extensionKind": [
         "ui"
@@ -33,8 +33,7 @@
         "in-Place"
     ],
     "activationEvents": [
-        "onStartupFinished",
-        "onLanguage:*"
+        "onStartupFinished"
     ],
     "main": "./out/extension",
     "contributes": {
@@ -105,7 +104,7 @@
             "commandPalette": [
                 {
                     "command": "clipboard-manager-with-cycling.editor.pickAndPaste",
-                    "when": "editorFocus && !editorReadonly"
+                    "when": "(textInputFocus || editorTextFocus) && !editorReadonly"
                 },
                 {
                     "command": "clipboard-manager-with-cycling.editor.showClipboardInFile",

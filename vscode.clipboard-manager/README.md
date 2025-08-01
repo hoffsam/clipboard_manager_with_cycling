@@ -1,14 +1,21 @@
 # Clipboard Manager
 
+Fork of Clipboard Manager, written by Edgar Messias: [https://marketplace.visualstudio.com/items?itemName=EdgardMessias.clipboard-manager](https://marketplace.visualstudio.com/items?itemName=EdgardMessias.clipboard-manager)
+
+Original written by: Edgar Messias [https://github.com/edgardmessias](https://github.com/edgardmessias)
+
+
 Keep a history of your copied and cut items and re-paste, without override the `Ctrl+C` and `Ctrl+V` keyboard shortcuts.
 
-To pick a copied item, only run `Ctrl+Shift+V`
+This version adds In-Place Cycling. So, instead of needing to go through the Pick and Paste dropdown in the command pallette, the pasted text will cycle in place by clicking `Ctrl+Shift+V` (next) or `Ctrl+Shift+Alt+V` (previous).
+
+To pick a copied item from a command pallette dropdown instead, click `Shift+Alt+Vt+V`
 
 ## Features
 
 1. Save history of all copied and cut items
 1. Can check copied items outside the VSCode (`"clipboard-manager-with-cycling.onlyWindowFocused": false`)
-1. Paste from history (`Ctrl+Shift+V` => Pick and Paste)
+1. Paste from history (`Shift+Alt+V` => cycle in-place OR `Ctrl+Alt+V` => Pick and Paste)
 1. Preview the paste
 1. Snippets to paste (Ex. `clip01, clip02, ...`)
 1. Remove selected item from history
@@ -68,8 +75,8 @@ Pick and Paste:
 ![Clipboard Manager - Pick and Paste](screenshots/pick-and-paste.gif)
 
 # Donation
-* Donation is as per your goodwill to support my development.
-* If you are interested in my future developments, i would really appreciate a small donation to support this project.
+* Donation is as per your goodwill to support Edgar's development.
+* If you are interested in Edgar's future developments, he would really appreciate a small donation to support this project.
 <table border="0">
  <tr>
     <td align="center">
