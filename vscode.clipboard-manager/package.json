@@ -46,8 +46,7 @@
         "views": {
             "clipboard-manager-with-cycling": [
                 {
-                    "icon": "media/clipboard.svg",
-                    "id": "clipboardHistory",
+                    "id": "clipboard-manager-with-cycling.clipboardHistory",
                     "name": "Clipboard History"
                 }
             ]
@@ -135,7 +134,7 @@
             "view/title": [
                 {
                     "command": "clipboard-manager-with-cycling.history.clear",
-                    "when": "view == clipboardHistory",
+                    "when": "view == clipboard-manager-with-cycling.clipboardHistory",
                     "group": "navigation"
                 }
             ]

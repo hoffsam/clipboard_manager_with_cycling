@@ -33,8 +33,10 @@ export async function activateExtension() {
 export async function showSidebar() {
   try {
     await vscode.commands.executeCommand(
-      "workbench.view.extension.clipboard-manager-with-cycling"
+      "workbench.view.extension.clipboard-manager-with-cycling.clipboardHistory"
     );
     // tslint:disable-next-line:no-empty
-  } catch (error) {}
+  } catch (error) {
+    console.error("Error showing sidebar:", error);
+  }
 }
