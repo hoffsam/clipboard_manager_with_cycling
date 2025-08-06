@@ -98,6 +98,11 @@
                 "command": "clipboard-manager-with-cycling.editor.pastePrevInPlace",
                 "title": "Paste Previous In Place",
                 "category": "Clipboard Manager"
+            },
+            {
+                "command": "clipboard-manager-with-cycling.editor.acceptCyclingSelection",
+                "title": "Accept Cycling Selection",
+                "category": "Clipboard Manager"
             }
         ],
         "menus": {
@@ -165,6 +170,16 @@
                 "mac": "Cmd+Shift+Alt+V",
                 "command": "clipboard-manager-with-cycling.editor.pastePrevInPlace",
                 "when": "(textInputFocus || editorTextFocus) && !editorReadonly"
+            },
+            {
+                "key": "enter",
+                "command": "clipboard-manager-with-cycling.editor.acceptCyclingSelection",
+                "when": "clipboard-manager-cycling.isCycling && editorTextFocus && !inQuickOpen && !suggestWidgetVisible"
+            },
+            {
+                "key": "tab",
+                "command": "clipboard-manager-with-cycling.editor.acceptCyclingSelection",
+                "when": "clipboard-manager-cycling.isCycling && editorTextFocus && !inQuickOpen && !suggestWidgetVisible"
             }
         ],
         "configuration": [

@@ -15,6 +15,7 @@ import { ClipboardTreeDataProvider } from "./tree/history";
 import { CopyToHistoryCommand } from "./commands/copyToHistory";
 import { PasteNextInPlaceCommand } from './commands/pasteNextInPlace';
 import { PastePrevInPlaceCommand } from './commands/pastePrevInPlace';
+import { AcceptCyclingSelectionCommand } from './commands/acceptCyclingSelection';
 import { sharedCyclingState, initializeCyclingState } from './cyclingState';
 
 
@@ -59,6 +60,7 @@ export async function activate(context: vscode.ExtensionContext) {
   disposable.push(new CopyToHistoryCommand(monitor));
   disposable.push(new PasteNextInPlaceCommand(manager));
   disposable.push(new PastePrevInPlaceCommand(manager));
+  disposable.push(new AcceptCyclingSelectionCommand());
 
   const completion = new ClipboardCompletion(manager);
   // disposable.push(completion);

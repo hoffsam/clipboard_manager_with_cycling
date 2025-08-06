@@ -9,6 +9,7 @@ export class CyclingState implements vscode.Disposable {
     private _commandInProgress = false;
     private _manager: ClipboardManager | null = null;
     private _lastSelectedText: string | null = null;
+    private _isCycling = false;
 
     constructor() {
         this._disposables.push(
@@ -35,12 +36,18 @@ export class CyclingState implements vscode.Disposable {
         }
     }
 
+    private setContext(isCycling: boolean) {
+        vscode.commands.executeCommand('setContext', 'clipboard-manager-cycling.isCycling', isCycling);
+    }
+
     public reset() {
         // Update clip usage for the last selected item before resetting
         if (this._manager && this._lastSelectedText) {
             this._manager.updateClipUsage(this._lastSelectedText);
         }
         
+        this._isCycling = false;
+        this.setContext(false);
         resetClipboardIndex();
         this._lastInsertRange = null;
         this._lastEditor = null;
@@ -51,6 +58,23 @@ export class CyclingState implements vscode.Disposable {
         this._manager = manager;
     }
 
+    public acceptCurrentSelection() {
+        if (!this._isCycling || !this._lastEditor || !this._lastInsertRange) {
+            return;
+        }
+
+        // Move cursor to end of selection and exit cycling
+        const endPosition = this._lastInsertRange.end;
+        this._lastEditor.selection = new vscode.Selection(endPosition, endPosition);
+        
+        // Trigger the update and reset
+        this.reset();
+    }
+
+    public get isCycling(): boolean {
+        return this._isCycling;
+    }
+
     public executePaste(
         editor: vscode.TextEditor, 
         text: string, 
@@ -58,6 +82,8 @@ export class CyclingState implements vscode.Disposable {
     ) {
         // Track the text being pasted during cycling
         this._lastSelectedText = text;
+        this._isCycling = true;
+        this.setContext(true);
         this._commandInProgress = true;
 
         const selection = this._lastInsertRange ? 

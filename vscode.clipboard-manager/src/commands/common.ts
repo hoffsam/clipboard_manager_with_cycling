@@ -9,4 +9,5 @@ export enum commandList {
   showClipboardInFile = "clipboard-manager-with-cycling.editor.showClipboardInFile",
   pasteNextInPlace = "clipboard-manager-with-cycling.editor.pasteNextInPlace",
   pastePrevInPlace = "clipboard-manager-with-cycling.editor.pastePrevInPlace",
+  acceptCyclingSelection = "clipboard-manager-with-cycling.editor.acceptCyclingSelection",
 }
