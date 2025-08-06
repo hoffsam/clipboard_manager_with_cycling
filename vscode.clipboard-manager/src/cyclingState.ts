@@ -10,11 +10,57 @@ export class CyclingState implements vscode.Disposable {
     private _manager: ClipboardManager | null = null;
     private _lastSelectedText: string | null = null;
     private _isCycling = false;
+    private _undoGroupActive = false;
+    private _safetyTimeout: NodeJS.Timeout | null = null;
 
     constructor() {
         this._disposables.push(
             vscode.window.onDidChangeTextEditorSelection(this.onSelectionChanged, this)
         );
+    }
+
+    private get config() {
+        return vscode.workspace.getConfiguration('clipboard-manager-with-cycling');
+    }
+
+    private async startUndoGroup(editor: vscode.TextEditor) {
+        if (!this.config.get('singleUndoPerCycle', false)) return;
+
+        try {
+
+            await editor.edit(() => { }, {
+                undoStopBefore: true,
+                undoStopAfter: false
+            });
+            this._undoGroupActive = true;
+
+            const timeoutMs = this.config.get('singleUndoTimeout', 5000);
+            this._safetyTimeout = setTimeout(() => {
+                this.finalizeUndoGroup();
+                this.reset();
+            }, timeoutMs);
+        } catch (error) {
+            console.error('Failed to start undo group:', error);
+        }
+    }
+
+    private async finalizeUndoGroup() {
+        if (this._safetyTimeout) {
+            clearTimeout(this._safetyTimeout);
+            this._safetyTimeout = null;
+        };
+        if (!this._undoGroupActive || !this._lastEditor) return;
+
+        try {
+            await this._lastEditor.edit(() => { }, {
+                undoStopBefore: false,
+                undoStopAfter: true
+            });
+        } catch (error) {
+            console.error('Failed to finalize undo group:', error);
+        } finally {
+            this._undoGroupActive = false;
+        }
     }
 
     private onSelectionChanged(event: vscode.TextEditorSelectionChangeEvent) {
@@ -30,7 +76,7 @@ export class CyclingState implements vscode.Disposable {
             return;
         }
 
-        if (!selection || !this._lastInsertRange.contains(selection) || 
+        if (!selection || !this._lastInsertRange.contains(selection) ||
             (!selection.isEmpty && !selection.isEqual(new vscode.Selection(this._lastInsertRange.start, this._lastInsertRange.end)))) {
             this.reset();
         }
@@ -41,17 +87,17 @@ export class CyclingState implements vscode.Disposable {
     }
 
     public reset() {
-        // Update clip usage for the last selected item before resetting
         if (this._manager && this._lastSelectedText) {
             this._manager.updateClipUsage(this._lastSelectedText);
         }
-        
+
         this._isCycling = false;
         this.setContext(false);
         resetClipboardIndex();
         this._lastInsertRange = null;
         this._lastEditor = null;
         this._lastSelectedText = null;
+        this.finalizeUndoGroup().catch(() => { });
     }
 
     public setManager(manager: ClipboardManager) {
@@ -63,12 +109,12 @@ export class CyclingState implements vscode.Disposable {
             return;
         }
 
-        // Move cursor to end of selection and exit cycling
         const endPosition = this._lastInsertRange.end;
         this._lastEditor.selection = new vscode.Selection(endPosition, endPosition);
-        
-        // Trigger the update and reset
-        this.reset();
+
+        this.finalizeUndoGroup().finally(() => {
+            this.reset();
+        });
     }
 
     public get isCycling(): boolean {
@@ -76,36 +122,42 @@ export class CyclingState implements vscode.Disposable {
     }
 
     public executePaste(
-        editor: vscode.TextEditor, 
-        text: string, 
+        editor: vscode.TextEditor,
+        text: string,
         onSuccess?: (range: vscode.Range) => void
     ) {
-        // Track the text being pasted during cycling
         this._lastSelectedText = text;
         this._isCycling = true;
         this.setContext(true);
         this._commandInProgress = true;
 
-        const selection = this._lastInsertRange ? 
-            new vscode.Selection(this._lastInsertRange.start, this._lastInsertRange.end) : 
+        if (!this._undoGroupActive) {
+            this.startUndoGroup(editor);
+        }
+
+        const selection = this._lastInsertRange ?
+            new vscode.Selection(this._lastInsertRange.start, this._lastInsertRange.end) :
             editor.selection;
-        
+
         const insertPos = selection.start;
 
         editor.edit(editBuilder => {
             editBuilder.delete(selection);
             editBuilder.insert(insertPos, text);
+        }, {
+            undoStopBefore: false,
+            undoStopAfter: false
         }).then(success => {
             this._commandInProgress = false;
-            
+
             if (!success) return;
 
             const newEnd = this.calculateEndPosition(insertPos, text);
             this._lastInsertRange = new vscode.Range(insertPos, newEnd);
             this._lastEditor = editor;
-            
+
             editor.selection = new vscode.Selection(insertPos, newEnd);
-            
+
             if (onSuccess) {
                 onSuccess(this._lastInsertRange);
             }
@@ -133,7 +185,6 @@ export class CyclingState implements vscode.Disposable {
 
 export const sharedCyclingState = new CyclingState();
 
-// Helper function to initialize the cycling state with manager
 export function initializeCyclingState(manager: ClipboardManager) {
     sharedCyclingState.setManager(manager);
 }
