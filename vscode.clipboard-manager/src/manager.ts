@@ -1,4 +1,5 @@
 import * as fs from "fs";
+import { promises as fsPromises } from "fs";
 import * as os from "os";
 import * as path from "path";
 import * as vscode from "vscode";
@@ -37,12 +38,17 @@ export class ClipboardManager implements vscode.Disposable {
   ) {
     this._monitor.onDidChangeText(this.updateClipList, this, this._disposable);
 
-    this.loadClips();
+    // Load clips asynchronously to avoid blocking activation
+    this.loadClips().catch(error => {
+      console.error('Failed to load clipboard history:', error);
+    });
 
     vscode.window.onDidChangeWindowState(
       state => {
         if (state.focused) {
-          this.checkClipsUpdate();
+          this.checkClipsUpdate().catch(error => {
+            console.error('Failed to check clips update on window focus:', error);
+          });
         }
       },
       this,
@@ -50,12 +56,16 @@ export class ClipboardManager implements vscode.Disposable {
     );
 
     vscode.workspace.onDidChangeConfiguration(
-      e => e.affectsConfiguration("clipboard-manager-with-cycling") && this.saveClips()
+      e => e.affectsConfiguration("clipboard-manager-with-cycling") && this.saveClips().catch(error => {
+        console.error('Failed to save clips on config change:', error);
+      })
     );
   }
 
   protected updateClipList(change: IClipboardTextChange) {
-    this.checkClipsUpdate();
+    this.checkClipsUpdate().catch(error => {
+      console.error('Failed to check clips update:', error);
+    });
 
     const config = vscode.workspace.getConfiguration("clipboard-manager-with-cycling");
     const maxClips = config.get("maxClips", 100);
@@ -91,11 +101,15 @@ export class ClipboardManager implements vscode.Disposable {
 
     this._onDidClipListChange.fire();
 
-    this.saveClips();
+    this.saveClips().catch(error => {
+      console.error('Failed to save clips:', error);
+    });
   }
 
   public updateClipUsage(value: string) {
-    this.checkClipsUpdate();
+    this.checkClipsUpdate().catch(error => {
+      console.error('Failed to check clips update:', error);
+    });
 
     const config = vscode.workspace.getConfiguration("clipboard-manager-with-cycling");
     const moveToTop = config.get("moveToTop", true);
@@ -109,7 +123,9 @@ export class ClipboardManager implements vscode.Disposable {
         const clips = this.clips.splice(index, 1);
         this._clips.unshift(...clips);
         this._onDidClipListChange.fire();
-        this.saveClips();
+        this.saveClips().catch(error => {
+          console.error('Failed to save clips:', error);
+        });
       }
     }
   }
@@ -120,23 +136,31 @@ export class ClipboardManager implements vscode.Disposable {
   }
 
   public removeClipboardValue(value: string) {
-    this.checkClipsUpdate();
+    this.checkClipsUpdate().catch(error => {
+      console.error('Failed to check clips update:', error);
+    });
 
     const prevLength = this._clips.length;
 
     this._clips = this._clips.filter(c => c.value !== value);
     this._onDidClipListChange.fire();
-    this.saveClips();
+    this.saveClips().catch(error => {
+      console.error('Failed to save clips:', error);
+    });
 
     return prevLength !== this._clips.length;
   }
 
   public clearAll() {
-    this.checkClipsUpdate();
+    this.checkClipsUpdate().catch(error => {
+      console.error('Failed to check clips update:', error);
+    });
 
     this._clips = [];
     this._onDidClipListChange.fire();
-    this.saveClips();
+    this.saveClips().catch(error => {
+      console.error('Failed to save clips:', error);
+    });
 
     return true;
   }
@@ -186,7 +210,7 @@ export class ClipboardManager implements vscode.Disposable {
     return value;
   }
 
-  public saveClips() {
+  public async saveClips() {
     const file = this.getStoreFile();
     if (!file) {
       return;
@@ -208,8 +232,9 @@ export class ClipboardManager implements vscode.Disposable {
     }
 
     try {
-      fs.writeFileSync(file, json);
-      this.lastUpdate = fs.statSync(file).mtimeMs;
+      await fsPromises.writeFile(file, json);
+      const stat = await fsPromises.stat(file);
+      this.lastUpdate = stat.mtimeMs;
     } catch (error: any) {
       switch (error.code) {
         case "EPERM":
@@ -231,7 +256,7 @@ export class ClipboardManager implements vscode.Disposable {
   /**
    * Check the clip history changed from another workspace
    */
-  public checkClipsUpdate() {
+  public async checkClipsUpdate() {
     const file = this.getStoreFile();
 
     if (!file) {
@@ -242,23 +267,27 @@ export class ClipboardManager implements vscode.Disposable {
       return;
     }
 
-    const stat = fs.statSync(file);
-
-    if (this.lastUpdate < stat.mtimeMs) {
-      this.lastUpdate = stat.mtimeMs;
-      this.loadClips();
+    try {
+      const stat = await fsPromises.stat(file);
+      if (this.lastUpdate < stat.mtimeMs) {
+        this.lastUpdate = stat.mtimeMs;
+        await this.loadClips();
+      }
+    } catch (error) {
+      // ignore stat errors
     }
   }
 
-  public loadClips() {
+  public async loadClips() {
     let json;
 
     const file = this.getStoreFile();
 
     if (file && fs.existsSync(file)) {
       try {
-        json = fs.readFileSync(file);
-        this.lastUpdate = fs.statSync(file).mtimeMs;
+        json = await fsPromises.readFile(file, 'utf8');
+        const stat = await fsPromises.stat(file);
+        this.lastUpdate = stat.mtimeMs;
       } catch (error) {
         // ignore
       }
@@ -274,7 +303,7 @@ export class ClipboardManager implements vscode.Disposable {
     let stored: any = {};
 
     try {
-      stored = JSON.parse(json);
+      stored = JSON.parse(typeof json === 'string' ? json : json.toString());
     } catch (error) {
       console.log(error);
       return;

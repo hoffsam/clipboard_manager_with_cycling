@@ -25,18 +25,25 @@ let manager: ClipboardManager;
 export async function activate(context: vscode.ExtensionContext) {
   const disposable: vscode.Disposable[] = [];
 
-  // Check the clipboard is working
+  // Initialize monitor immediately, test clipboard access in background
   let monitor: Monitor;
 
   try {
-    await defaultClipboard.readText(); // Clipboard access test
     disposable.push(defaultClipboard);
-
     monitor = new Monitor(defaultClipboard);
     disposable.push(monitor);
+
+    // Test clipboard access in background to avoid blocking activation
+    setTimeout(async () => {
+      try {
+        await defaultClipboard.readText();
+      } catch (error: any) {
+        console.warn("Clipboard read failed:", error);
+        vscode.window.showWarningMessage("Clipboard access failed: clipboard monitoring may be limited.");
+      }
+    }, 0);
   } catch (error: any) {
-    console.warn("Clipboard read failed:", error);
-    vscode.window.showWarningMessage("Clipboard access failed: clipboard monitoring disabled.");
+    console.warn("Clipboard initialization failed:", error);
     monitor = new Monitor(null as any); // placeholder that won't do anything
   }
 
@@ -123,6 +130,8 @@ export async function activate(context: vscode.ExtensionContext) {
 // this method is called when your extension is deactivated
 export function deactivate() {
   if (manager) {
-    manager.saveClips();
+    manager.saveClips().catch(error => {
+      console.error('Failed to save clips on deactivation:', error);
+    });
   }
 }

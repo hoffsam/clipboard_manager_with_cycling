@@ -48,8 +48,10 @@ export class Monitor implements vscode.Disposable {
     this.readText().then(value => {
       this._previousText = value;
 
-      // Initialize the checkInterval
-      this.checkInterval = this._checkInterval;
+      // Defer monitor polling initialization to avoid blocking activation
+      setTimeout(() => {
+        this.checkInterval = this._checkInterval;
+      }, 100);
 
       return value;
     });

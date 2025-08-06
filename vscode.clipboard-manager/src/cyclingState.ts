@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { resetClipboardIndex, getClipboardIndex } from './clipboardState';
+import { resetClipboardIndex } from './clipboardState';
 import { ClipboardManager } from './manager';
 
 export class CyclingState implements vscode.Disposable {
