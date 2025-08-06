@@ -103,8 +103,7 @@
         "menus": {
             "commandPalette": [
                 {
-                    "command": "clipboard-manager-with-cycling.editor.pickAndPaste",
-                    "when": "(textInputFocus || editorTextFocus) && !editorReadonly"
+                    "command": "clipboard-manager-with-cycling.editor.pickAndPaste"
                 },
                 {
                     "command": "clipboard-manager-with-cycling.editor.showClipboardInFile",
