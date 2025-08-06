@@ -131,7 +131,9 @@ export class CyclingState implements vscode.Disposable {
         this.setContext(true);
         this._commandInProgress = true;
 
-        if (!this._undoGroupActive) {
+        const singleUndoEnabled = this.config.get('singleUndoPerCycle', false);
+
+        if (singleUndoEnabled && !this._undoGroupActive) {
             this.startUndoGroup(editor);
         }
 
@@ -145,8 +147,8 @@ export class CyclingState implements vscode.Disposable {
             editBuilder.delete(selection);
             editBuilder.insert(insertPos, text);
         }, {
-            undoStopBefore: false,
-            undoStopAfter: false
+            undoStopBefore: !singleUndoEnabled,
+            undoStopAfter: !singleUndoEnabled
         }).then(success => {
             this._commandInProgress = false;
 
