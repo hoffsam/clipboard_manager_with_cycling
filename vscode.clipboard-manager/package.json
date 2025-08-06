@@ -33,7 +33,7 @@
         "in-Place"
     ],
     "activationEvents": [
-        "onStartupFinished"
+        "*"
     ],
     "main": "./out/extension",
     "contributes": {

@@ -94,7 +94,7 @@ export class ClipboardManager implements vscode.Disposable {
     this.saveClips();
   }
 
-  public async setClipboardValue(value: string) {
+  public updateClipUsage(value: string) {
     this.checkClipsUpdate();
 
     const config = vscode.workspace.getConfiguration("clipboard-manager-with-cycling");
@@ -112,7 +112,10 @@ export class ClipboardManager implements vscode.Disposable {
         this.saveClips();
       }
     }
+  }
 
+  public async setClipboardValue(value: string) {
+    this.updateClipUsage(value);
     return await this._monitor.clipboard.writeText(value);
   }
 

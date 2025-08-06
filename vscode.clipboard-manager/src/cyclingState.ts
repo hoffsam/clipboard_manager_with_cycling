@@ -1,11 +1,14 @@
 import * as vscode from 'vscode';
-import { resetClipboardIndex } from './clipboardState';
+import { resetClipboardIndex, getClipboardIndex } from './clipboardState';
+import { ClipboardManager } from './manager';
 
 export class CyclingState implements vscode.Disposable {
     private _disposables: vscode.Disposable[] = [];
     private _lastInsertRange: vscode.Range | null = null;
     private _lastEditor: vscode.TextEditor | null = null;
     private _commandInProgress = false;
+    private _manager: ClipboardManager | null = null;
+    private _lastSelectedText: string | null = null;
 
     constructor() {
         this._disposables.push(
@@ -33,9 +36,19 @@ export class CyclingState implements vscode.Disposable {
     }
 
     public reset() {
+        // Update clip usage for the last selected item before resetting
+        if (this._manager && this._lastSelectedText) {
+            this._manager.updateClipUsage(this._lastSelectedText);
+        }
+        
         resetClipboardIndex();
         this._lastInsertRange = null;
         this._lastEditor = null;
+        this._lastSelectedText = null;
+    }
+
+    public setManager(manager: ClipboardManager) {
+        this._manager = manager;
     }
 
     public executePaste(
@@ -43,6 +56,8 @@ export class CyclingState implements vscode.Disposable {
         text: string, 
         onSuccess?: (range: vscode.Range) => void
     ) {
+        // Track the text being pasted during cycling
+        this._lastSelectedText = text;
         this._commandInProgress = true;
 
         const selection = this._lastInsertRange ? 
@@ -91,3 +106,8 @@ export class CyclingState implements vscode.Disposable {
 }
 
 export const sharedCyclingState = new CyclingState();
+
+// Helper function to initialize the cycling state with manager
+export function initializeCyclingState(manager: ClipboardManager) {
+    sharedCyclingState.setManager(manager);
+}

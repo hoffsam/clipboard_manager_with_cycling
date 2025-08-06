@@ -1,4 +1,3 @@
-import * as path from "path";
 import * as vscode from "vscode";
 import { commandList } from "../commands/common";
 import { ClipboardManager, IClipboardItem } from "../manager";
@@ -19,19 +18,61 @@ export class ClipHistoryItem extends vscode.TreeItem {
       arguments: [this.clip],
     };
 
+    // Set up tooltip and context based on source location
     if (this.clip.createdLocation) {
-      this.resourceUri = this.clip.createdLocation.uri;
+      // Don't set resourceUri to prevent validation errors from showing
+      // this.resourceUri = this.clip.createdLocation.uri;
       this.contextValue += "file";
 
-      this.tooltip = `File: ${this.resourceUri.fsPath}\nValue: ${this.tooltip}\n`;
-    } else {
-      const basePath = path.join(__filename, "..", "..", "..", "resources");
-
-      this.iconPath = {
-        light: path.join(basePath, "light", "string.svg"),
-        dark: path.join(basePath, "dark", "string.svg"),
-      };
+      this.tooltip = `File: ${this.clip.createdLocation.uri.fsPath}\nValue: ${this.tooltip}\n`;
     }
+
+    // Always use custom icons to avoid file validation indicators
+    this.iconPath = this.getIconForLanguage(this.clip.language);
+  }
+
+  private getIconForLanguage(language?: string): vscode.ThemeIcon | { light: string; dark: string } {
+    // Use VS Code's built-in theme icons based on language
+    if (language) {
+      switch (language.toLowerCase()) {
+        case 'typescript':
+        case 'typescriptreact':
+          return new vscode.ThemeIcon('symbol-class', new vscode.ThemeColor('symbolIcon.classForeground'));
+        case 'javascript':
+        case 'javascriptreact':
+          return new vscode.ThemeIcon('symbol-function', new vscode.ThemeColor('symbolIcon.functionForeground'));
+        case 'python':
+          return new vscode.ThemeIcon('symbol-module', new vscode.ThemeColor('symbolIcon.moduleForeground'));
+        case 'json':
+          return new vscode.ThemeIcon('symbol-object', new vscode.ThemeColor('symbolIcon.objectForeground'));
+        case 'html':
+        case 'xml':
+          return new vscode.ThemeIcon('symbol-tag', new vscode.ThemeColor('symbolIcon.tagForeground'));
+        case 'css':
+        case 'scss':
+        case 'less':
+          return new vscode.ThemeIcon('symbol-color', new vscode.ThemeColor('symbolIcon.colorForeground'));
+        case 'markdown':
+          return new vscode.ThemeIcon('book');
+        case 'sql':
+          return new vscode.ThemeIcon('database');
+        case 'yaml':
+        case 'yml':
+          return new vscode.ThemeIcon('symbol-key', new vscode.ThemeColor('symbolIcon.keyForeground'));
+        default:
+          // For other languages, use a generic file icon
+          return new vscode.ThemeIcon('symbol-text', new vscode.ThemeColor('symbolIcon.textForeground'));
+      }
+    }
+
+    
+    // Fallback to custom string icon for items without language
+    // const basePath = path.join(__filename, "..", "..", "..", "resources");
+    // return {
+    //   light: path.join(basePath, "light", "string.svg"),
+    //   dark: path.join(basePath, "dark", "string.svg"),
+    // };
+    return new vscode.ThemeIcon('symbol-text', new vscode.ThemeColor('symbolIcon.textForeground'));
   }
 }
 
