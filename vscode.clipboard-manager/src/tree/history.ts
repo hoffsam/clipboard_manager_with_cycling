@@ -57,6 +57,8 @@ export class ClipboardTreeDataProvider
     return element;
   }
 
+
+  
   public getChildren(
     _element?: ClipHistoryItem | undefined
   ): vscode.ProviderResult<ClipHistoryItem[]> {

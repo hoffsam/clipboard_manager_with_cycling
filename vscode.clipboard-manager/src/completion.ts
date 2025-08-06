@@ -36,13 +36,18 @@ export class ClipboardCompletion implements vscode.CompletionItemProvider {
     const completions: vscode.CompletionItem[] = clips.map((clip, index) => {
       // Add left zero pad from max number of clips
       const indexNumber = leftPad(index + 1, maxLength, "0");
+      const truncatedLabel = clip.value.replace(/\s+/g, " ").trim().length > 150 ? `${clip.value.replace(/\s+/g, " ").trim().substring(0, 147)}...` : clip.value.replace(/\s+/g, " ").trim().substring(0, 150);
 
       const c: vscode.CompletionItem = {
-        label: `${prefix}${indexNumber}`,
-        detail: `Clipboard ${indexNumber}`,
+        //label: `${prefix}${indexNumber}`,
+        //detail: `Clipboard ${indexNumber}`,
+        label: "$(clippy) " + truncatedLabel,
+        detail: `${prefix}${indexNumber}`,
+        //documentation: new vscode.MarkdownString(detailedTooltip),
         insertText: clip.value,
         kind: vscode.CompletionItemKind.Text,
-        filterText: `${prefix}${indexNumber} ${clip.value}`,
+        //filterText: `${prefix}${indexNumber} ${clip.value}`,
+        filterText: `${clip.value}`
       };
 
       // Highlight the syntax of clip
